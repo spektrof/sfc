@@ -1,0 +1,36 @@
+{
+	"devices" :
+	{
+		"ip" : ["192.168.0.75","192.168.0.71","127.0.0.1"]
+	},
+	"filters" :
+	{
+		"outlier" : 
+		[
+			{
+				"type": "base",
+				"k_neighbour" : 8,
+				"outlier_limit" : 2.0
+			}
+		],
+		"simplifier" :
+		[
+			{
+				"type": "grid",
+				"cell_size" : 0.0001	
+			},
+			{
+				"type": "hier",
+				"max_cluster_size" : 200.0,
+				"max_surface_variation" : 0.01
+			}
+		],
+		"smoother" :
+		[
+			{
+				"type": "jet",
+				"k_neighbour" : 24
+			}
+		]
+	}
+}
