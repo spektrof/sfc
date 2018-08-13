@@ -1,11 +1,12 @@
 #pragma once
-
 #include <vector>
-#include "cgal_types.h"	//conc tag and pointmap
+#include "basic_parser.h"
+#include "io_types.h"
+
 #include "filters.h"
-#include "parser.h"
 
 #include <CGAL/compute_average_spacing.h>
+#include "base_types.h"	//conc tag
 
 typedef std::vector < Filter<tuple, filter_pointmap>* > filter_container;
 
@@ -51,16 +52,16 @@ void setup_filters(config_data& config, filter_container& filters)
 			}
 			else if (!strcmp(type, "jet"))
 			{
-			#ifdef EIGEN_ENABLED
+#ifdef EIGEN_ENABLED
 				int k_neighbour;
 
 				if (parser::get_int_arg(it.size(), it, "k_neighbour", k_neighbour))
 				{
 					filters.push_back(new JetSmoothing<tuple, filter_pointmap>(k_neighbour));
 				}
-			#else
+#else
 				printf("Couldnt add the jetsmoother, please recompile with EIGEN_ENABLED flag and Eigen library!\n");
-			#endif
+#endif
 			}
 		}
 	}

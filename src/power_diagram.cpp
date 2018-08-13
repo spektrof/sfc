@@ -1,10 +1,11 @@
 #include "power_diagram.h"
+#include "utils.h"
 
 /* ****************************
 Diagram calculation main functions
 **************************** */
 
-void PowerDiagram::calc_diagram(const std::vector<std::pair<Pole, Point> >& weighted_points)
+void PowerDiagram::calc_diagram(const std::vector<std::pair<Pole2, Point> >& weighted_points)
 {
 	/*************************************
 	*	Clear	*
@@ -77,9 +78,9 @@ void PowerDiagram::calc_diagram(const std::vector<std::pair<Pole, Point> >& weig
 	*	Make weighted points and do Triangulation	*
 	**************************************/
 	
-	std::vector<std::pair<weighted_point, point_inf>> w_p;
+	std::vector<std::pair<weighted_point, point_inf2>> w_p;
 	for (auto it : pole_point_longest_radius_pairs)
-		w_p.push_back(std::pair<weighted_point, point_inf>(weighted_point(it.first, it.second.first* it.second.first), point_inf(it.second.second)));	//d*d - r -> az alap sugár négyzete kell
+		w_p.push_back(std::pair<weighted_point, point_inf2>(weighted_point(it.first, it.second.first* it.second.first), point_inf2(it.second.second)));	//d*d - r -> az alap sugár négyzete kell
 
 
 	pole_point_longest_radius_pairs.clear();
@@ -96,7 +97,7 @@ void PowerDiagram::calc_diagram(const std::vector<std::pair<Pole, Point> >& weig
 	regular_triangulation::Lock_data_structure locks(CGAL::Bbox_3(pole_bound.get_xmin(), pole_bound.get_ymin(), pole_bound.get_zmin(), pole_bound.get_xmax(), pole_bound.get_ymax(), pole_bound.get_zmax()), 50);
 	regular_triangulation R(w_p.begin(), w_p.end(), &locks);
 #else
-	regular_triangulation R(w_p.begin(), w_p.end());
+	regular_triangulation2 R(w_p.begin(), w_p.end());
 #endif
 	w_p.clear();
 
@@ -109,9 +110,9 @@ void PowerDiagram::calc_diagram(const std::vector<std::pair<Pole, Point> >& weig
 	process = hrclock::now();
 
 	std::map<edge_tt, edge_identifier> edge_cell_ids_map;
-	std::vector<point_inf*> inf_ptrs;
+	std::vector<point_inf2*> inf_ptrs;
 
-	std::vector<regular_finite_vertices_iterator> box_v_its;
+	std::vector<regular_finite_vertices_iterator2> box_v_its;
 	
 	make_power_cells(R, box_points, R.finite_vertices_begin(), R.finite_vertices_end(), &box_v_its, &inf_ptrs, &edge_cell_ids_map);
 
@@ -121,14 +122,14 @@ void PowerDiagram::calc_diagram(const std::vector<std::pair<Pole, Point> >& weig
 	{
 		box_ind--;
 		//get incident cells
-		std::vector<regular_cell_handle> inc_cells;
+		std::vector<regular_cell_handle2> inc_cells;
 		R.incident_cells(it, std::back_inserter(inc_cells));
 
 		//-----------------------------------------------
 		//Precalculations
 		auto inc_c_size = inc_cells.size();
 
-		std::set<regular_cell_handle> inc_cell_map;	//for finding cell in logM
+		std::set<regular_cell_handle2> inc_cell_map;	//for finding cell in logM
 
 		for (auto& it : inc_cells)
 			inc_cell_map.insert(it);
@@ -137,7 +138,7 @@ void PowerDiagram::calc_diagram(const std::vector<std::pair<Pole, Point> >& weig
 
 		for (size_t cit = 0; cit < inc_c_size; ++cit)
 		{
-			regular_cell_handle act_cell = inc_cells[cit];
+			regular_cell_handle2 act_cell = inc_cells[cit];
 			int act_index = act_cell->info().index;
 
 			if (act_index == -1) continue;
@@ -148,7 +149,7 @@ void PowerDiagram::calc_diagram(const std::vector<std::pair<Pole, Point> >& weig
 			//calculate edges
 			for (int i = 0; i < 4; ++i)
 			{
-				regular_cell_handle tmp_cell = act_cell->neighbor(i);
+				regular_cell_handle2 tmp_cell = act_cell->neighbor(i);
 				auto other_cell_candidate = inc_cell_map.find(tmp_cell);
 
 				if (other_cell_candidate != inc_cell_map.end())	//both cell_handle are related to the actual point
@@ -236,8 +237,12 @@ void PowerDiagram::calc_diagram(const std::vector<std::pair<Pole, Point> >& weig
 	printf("Power Diagram cells's neighbours are calculated\n");
 }
 
-void PowerDiagram::calc_diagram(std::vector<std::pair<weighted_point, point_inf>>& w_p)
+void PowerDiagram::calc_diagram(std::vector<std::pair<weighted_point, point_inf>>& w_p2)
 {
+	std::vector<std::pair<weighted_point, point_inf2>> w_p;
+	for (auto& it : w_p2)
+		w_p.push_back(std::pair<weighted_point, point_inf2>(it.first, point_inf2(it.second.surface_points)));
+
 	int ct = 0;
 	for (auto& it : w_p)
 	{
@@ -276,7 +281,7 @@ void PowerDiagram::calc_diagram(std::vector<std::pair<weighted_point, point_inf>
 	regular_triangulation::Lock_data_structure locks(CGAL::Bbox_3(pole_bound.get_xmin(), pole_bound.get_ymin(), pole_bound.get_zmin(), pole_bound.get_xmax(), pole_bound.get_ymax(), pole_bound.get_zmax()), 50);
 	regular_triangulation R(w_p.begin(), w_p.end(), &locks);
 #else
-	regular_triangulation R(w_p.begin(), w_p.end());
+	regular_triangulation2 R(w_p.begin(), w_p.end());
 #endif
 
 	w_p.clear();
@@ -289,9 +294,9 @@ void PowerDiagram::calc_diagram(std::vector<std::pair<weighted_point, point_inf>
 	process = hrclock::now();
 
 	std::map<edge_tt, edge_identifier> edge_cell_ids_map;
-	std::vector<point_inf*> inf_ptrs;
+	std::vector<point_inf2*> inf_ptrs;
 
-	std::vector<regular_finite_vertices_iterator> box_v_its;
+	std::vector<regular_finite_vertices_iterator2> box_v_its;
 
 	make_power_cells(R, box_points, R.finite_vertices_begin(), R.finite_vertices_end(), &box_v_its, &inf_ptrs, &edge_cell_ids_map);
 
@@ -301,14 +306,14 @@ void PowerDiagram::calc_diagram(std::vector<std::pair<weighted_point, point_inf>
 	{
 		box_ind--;
 		//get incident cells
-		std::vector<regular_cell_handle> inc_cells;
+		std::vector<regular_cell_handle2> inc_cells;
 		R.incident_cells(it, std::back_inserter(inc_cells));
 
 		//-----------------------------------------------
 		//Precalculations
 		auto inc_c_size = inc_cells.size();
 
-		std::set<regular_cell_handle> inc_cell_map;	//for finding cell in logM
+		std::set<regular_cell_handle2> inc_cell_map;	//for finding cell in logM
 
 		for (auto& it : inc_cells)
 			inc_cell_map.insert(it);
@@ -317,7 +322,7 @@ void PowerDiagram::calc_diagram(std::vector<std::pair<weighted_point, point_inf>
 
 		for (size_t cit = 0; cit < inc_c_size; ++cit)
 		{
-			regular_cell_handle act_cell = inc_cells[cit];
+			regular_cell_handle2 act_cell = inc_cells[cit];
 			int act_index = act_cell->info().index;
 
 			if (act_index == -1) continue;
@@ -328,7 +333,7 @@ void PowerDiagram::calc_diagram(std::vector<std::pair<weighted_point, point_inf>
 			//calculate edges
 			for (int i = 0; i < 4; ++i)
 			{
-				regular_cell_handle tmp_cell = act_cell->neighbor(i);
+				regular_cell_handle2 tmp_cell = act_cell->neighbor(i);
 				auto other_cell_candidate = inc_cell_map.find(tmp_cell);
 
 				if (other_cell_candidate != inc_cell_map.end())	//both cell_handle are related to the actual point
@@ -416,7 +421,7 @@ void PowerDiagram::calc_diagram(std::vector<std::pair<weighted_point, point_inf>
 	printf("Power Diagram cells's neighbours are calculated\n");
 
 }
-void PowerDiagram::make_power_cells(regular_triangulation& R, const std::set<Point>& box_points, regular_finite_vertices_iterator vit, regular_finite_vertices_iterator end, std::vector<regular_finite_vertices_iterator>* box_v_its, std::vector<point_inf*>* inf_ptrs, std::map<edge_tt, edge_identifier>* edge_cell_ids_map)
+void PowerDiagram::make_power_cells(regular_triangulation2& R, const std::set<Point>& box_points, regular_finite_vertices_iterator2 vit, regular_finite_vertices_iterator2 end, std::vector<regular_finite_vertices_iterator2>* box_v_its, std::vector<point_inf2*>* inf_ptrs, std::map<edge_tt, edge_identifier>* edge_cell_ids_map)
 {
 	for (; vit != end; vit++)
 	{
@@ -429,7 +434,7 @@ void PowerDiagram::make_power_cells(regular_triangulation& R, const std::set<Poi
 
 		//-----------------------------------------------
 		//get incident cells
-		std::vector<regular_cell_handle> inc_cells;
+		std::vector<regular_cell_handle2> inc_cells;
 		R.incident_cells(vit, std::back_inserter(inc_cells));
 
 		//check for empty
@@ -440,7 +445,7 @@ void PowerDiagram::make_power_cells(regular_triangulation& R, const std::set<Poi
 		//Precalculations
 		auto inc_c_size = inc_cells.size();
 
-		std::set<regular_cell_handle> inc_cell_map;	//for finding cell in logM
+		std::set<regular_cell_handle2> inc_cell_map;	//for finding cell in logM
 
 		for (auto& it : inc_cells)
 			inc_cell_map.insert(it);
@@ -466,7 +471,7 @@ void PowerDiagram::make_power_cells(regular_triangulation& R, const std::set<Poi
 
 		for (size_t cit = 0; cit < inc_c_size; ++cit)
 		{
-			regular_cell_handle act_cell = inc_cells[cit];
+			regular_cell_handle2 act_cell = inc_cells[cit];
 
 			auto act_info = &act_cell->info();
 			set_cell_info(R, act_cell, act_info);
@@ -478,7 +483,7 @@ void PowerDiagram::make_power_cells(regular_triangulation& R, const std::set<Poi
 
 			for (int i = 0; i < 4; ++i)
 			{
-				regular_cell_handle tmp_cell = act_cell->neighbor(i);
+				regular_cell_handle2 tmp_cell = act_cell->neighbor(i);
 				auto other_cell_candidate = inc_cell_map.find(tmp_cell);
 
 				if (other_cell_candidate != inc_cell_map.end())	//both cell_handle are related to the actual point
@@ -557,7 +562,7 @@ void PowerDiagram::make_power_cells(regular_triangulation& R, const std::set<Poi
 	}
 }
 
-void PowerDiagram::make_power_cells_threadsafe(regular_triangulation& R, const std::set<Point>& box_points, std::vector<regular_finite_vertices_iterator> fvi_v, std::vector<regular_finite_vertices_iterator>* box_v_its, std::vector<point_inf*>* inf_ptrs, std::map<edge_tt, edge_identifier>* edge_cell_ids_map, unsigned int* act_cell_id)
+void PowerDiagram::make_power_cells_threadsafe(regular_triangulation2& R, const std::set<Point>& box_points, std::vector<regular_finite_vertices_iterator2> fvi_v, std::vector<regular_finite_vertices_iterator2>* box_v_its, std::vector<point_inf2*>* inf_ptrs, std::map<edge_tt, edge_identifier>* edge_cell_ids_map, unsigned int* act_cell_id)
 {
 	for (auto& vit : fvi_v)
 	{
@@ -570,7 +575,7 @@ void PowerDiagram::make_power_cells_threadsafe(regular_triangulation& R, const s
 
 		//-----------------------------------------------
 		//get incident cells
-		std::vector<regular_cell_handle> inc_cells;
+		std::vector<regular_cell_handle2> inc_cells;
 		R.incident_cells_threadsafe(vit, std::back_inserter(inc_cells));
 
 		//check for empty
@@ -581,7 +586,7 @@ void PowerDiagram::make_power_cells_threadsafe(regular_triangulation& R, const s
 		//Precalculations
 		auto inc_c_size = inc_cells.size();
 
-		std::set<regular_cell_handle> inc_cell_map;	//for finding cell in logM
+		std::set<regular_cell_handle2> inc_cell_map;	//for finding cell in logM
 
 		for (auto& it : inc_cells)
 			inc_cell_map.insert(it);
@@ -590,8 +595,8 @@ void PowerDiagram::make_power_cells_threadsafe(regular_triangulation& R, const s
 		//store pole point for reference
 
 		this->mux->lock();
-		auto pol_res = pole_map.insert(std::pair<Point, unsigned int >(vit->point().point(), (unsigned int)pole_map.size()));
-		if (pol_res.second == false)
+		auto pol_res = &pole_map.insert(std::pair<Point, unsigned int >(vit->point().point(), (unsigned int)pole_map.size()));
+		if (pol_res->second == false)
 			printf("ERR: BAAAD, double POLE\n");
 
 		unsigned int act_pc_index = *act_cell_id;
@@ -600,7 +605,7 @@ void PowerDiagram::make_power_cells_threadsafe(regular_triangulation& R, const s
 
 		//-----------------------------------------------
 		//creating powercell								pole ref				get radius			related surf points
-		PowerCell* pc = new PowerCell(const_cast<Point*>(&(pol_res.first->first)), sqrt(vit->point().weight()), vit->info().surface_points, act_pc_index);		//vissza konverzió
+		PowerCell* pc = new PowerCell(const_cast<Point*>(&(pol_res->first->first)), sqrt(vit->point().weight()), vit->info().surface_points, act_pc_index);		//vissza konverzió
 
 		std::set<edge_tt*> related_edges_of_actual_inc_cells;		//for neighbours calculation
 	
@@ -608,7 +613,7 @@ void PowerDiagram::make_power_cells_threadsafe(regular_triangulation& R, const s
 
 		for (size_t cit = 0; cit < inc_c_size; ++cit)
 		{
-			regular_cell_handle act_cell = inc_cells[cit];
+			regular_cell_handle2 act_cell = inc_cells[cit];
 
 			auto act_info = &act_cell->info();
 			set_cell_info_threadsafe(R, act_cell, act_info);
@@ -620,7 +625,7 @@ void PowerDiagram::make_power_cells_threadsafe(regular_triangulation& R, const s
 			//calculate edges
 			for (int i = 0; i < 4; ++i)
 			{
-				regular_cell_handle tmp_cell = act_cell->neighbor(i);
+				regular_cell_handle2 tmp_cell = act_cell->neighbor(i);
 				auto other_cell_candidate = inc_cell_map.find(tmp_cell);
 
 				if (other_cell_candidate != inc_cell_map.end())	//both cell_handle are related to the actual point
@@ -633,13 +638,13 @@ void PowerDiagram::make_power_cells_threadsafe(regular_triangulation& R, const s
 					Point* tmp_vert_ptr = tmp_info->dual;
 
 					//calculate the edge
-					std::pair<std::map<Point*, edge_tt*>::iterator, bool> edge_it_ref;
+					std::pair<std::map<Point*, edge_tt*>::iterator, bool>* edge_it_ref;
 					if (act_index < tmp_index)
 					{
 						act_info->mux->lock();
 
-						edge_it_ref = act_info->edge.insert(std::pair<Point*, edge_tt*>(tmp_vert_ptr, nullptr));
-						if (edge_it_ref.second == true)
+						edge_it_ref = &act_info->edge.insert(std::pair<Point*, edge_tt*>(tmp_vert_ptr, nullptr));
+						if (edge_it_ref->second == true)
 						{
 							edge_tt edge = edge_tt(edge_t(edge_point(act_index, act_vert_ptr), edge_point(tmp_index, tmp_vert_ptr)));
 
@@ -647,7 +652,7 @@ void PowerDiagram::make_power_cells_threadsafe(regular_triangulation& R, const s
 
 							this->mux->lock();
 							power_edges.push_back(node);
-							edge_it_ref.first->second = &power_edges.back()->edge;
+							edge_it_ref->first->second = &power_edges.back()->edge;
 							this->mux->unlock();
 						}
 
@@ -657,8 +662,8 @@ void PowerDiagram::make_power_cells_threadsafe(regular_triangulation& R, const s
 					{
 						tmp_info->mux->lock();
 
-						edge_it_ref = tmp_info->edge.insert(std::pair<Point*, edge_tt*>(act_vert_ptr, nullptr));
-						if (edge_it_ref.second == true)
+						edge_it_ref = &tmp_info->edge.insert(std::pair<Point*, edge_tt*>(act_vert_ptr, nullptr));
+						if (edge_it_ref->second == true)
 						{
 							edge_tt edge = edge_tt(edge_t(edge_point(tmp_index, tmp_vert_ptr), edge_point(act_index, act_vert_ptr)));
 
@@ -666,7 +671,7 @@ void PowerDiagram::make_power_cells_threadsafe(regular_triangulation& R, const s
 
 							this->mux->lock();
 							power_edges.push_back(node);
-							edge_it_ref.first->second = &power_edges.back()->edge;
+							edge_it_ref->first->second = &power_edges.back()->edge;
 							this->mux->unlock();
 						}
 
@@ -676,11 +681,11 @@ void PowerDiagram::make_power_cells_threadsafe(regular_triangulation& R, const s
 					//put the edge into the edge cell id map
 					this->mux->lock();
 
-					auto ee_res = edge_cell_ids_map->insert(std::pair<edge_tt, edge_identifier>(*edge_it_ref.first->second, edge_identifier()));
-					if (ee_res.second == true)
-						ee_res.first->second.first = edge_it_ref.first->second;
+					auto ee_res = &edge_cell_ids_map->insert(std::pair<edge_tt, edge_identifier>(*edge_it_ref->first->second, edge_identifier()));
+					if (ee_res->second == true)
+						ee_res->first->second.first = edge_it_ref->first->second;
 
-					auto edge_element_from_map = *ee_res.first;
+					auto edge_element_from_map = *ee_res->first;
 					this->mux->unlock();
 
 					//save the edges which belong to the actual cell
@@ -696,7 +701,7 @@ void PowerDiagram::make_power_cells_threadsafe(regular_triangulation& R, const s
 							(*inf_ptrs)[related_power_cell]->mux->lock();
 
 							auto res = (*inf_ptrs)[related_power_cell]->neighbour_cell_edges.insert(std::pair<unsigned int, std::set<edge_tt*>>(act_pc_index, std::set<edge_tt*>()));
-							res.first->second.insert(edge_it_ref.first->second);
+							res.first->second.insert(edge_it_ref->first->second);
 
 							(*inf_ptrs)[related_power_cell]->mux->unlock();
 						}
@@ -705,7 +710,7 @@ void PowerDiagram::make_power_cells_threadsafe(regular_triangulation& R, const s
 							(*inf_ptrs)[act_pc_index]->mux->lock();
 
 							auto res = (*inf_ptrs)[act_pc_index]->neighbour_cell_edges.insert(std::pair<unsigned int, std::set<edge_tt*>>(related_power_cell, std::set<edge_tt*>()));
-							res.first->second.insert(edge_it_ref.first->second);
+							res.first->second.insert(edge_it_ref->first->second);
 
 							(*inf_ptrs)[act_pc_index]->mux->unlock();
 						}
@@ -732,7 +737,7 @@ void PowerDiagram::make_power_cells_threadsafe(regular_triangulation& R, const s
 	}
 }
 
-void PowerDiagram::set_cell_info(regular_triangulation& R, regular_cell_handle cell, cell_inf_power* info)
+void PowerDiagram::set_cell_info(regular_triangulation2& R, regular_cell_handle2 cell, cell_inf_power2* info)
 {
 	if (info->index == -1)
 	{
@@ -744,7 +749,7 @@ void PowerDiagram::set_cell_info(regular_triangulation& R, regular_cell_handle c
 	}
 }
 
-void PowerDiagram::set_cell_info_threadsafe(regular_triangulation& R, regular_cell_handle cell, cell_inf_power* info)
+void PowerDiagram::set_cell_info_threadsafe(regular_triangulation2& R, regular_cell_handle2 cell, cell_inf_power2* info)
 {
 	info->mux->lock();
 	if (info->index == -1)
@@ -764,7 +769,7 @@ void PowerDiagram::set_cell_info_threadsafe(regular_triangulation& R, regular_ce
 Labeling functions
 **************************** */
 
-float PolarBall::get_alpha_weight(PolarBall* rhs)
+float PolarBall2::get_alpha_weight(PolarBall2* rhs)
 {
 	float R = this->pole.radius;
 	float r = rhs->get_radius();
@@ -794,7 +799,7 @@ float PolarBall::get_alpha_weight(PolarBall* rhs)
 	return result_attempt;
 }
 
-float PolarBall::get_beta_weight(PolarBall* rhs, Point& surfpoint)
+float PolarBall2::get_beta_weight(PolarBall2* rhs, Point& surfpoint)
 {
 	/**************************
 	Check for common surf point
@@ -847,7 +852,7 @@ void PowerDiagram::label_poles()
 	*	Clear	*
 	**************************************/
 	priority_ball_queue pri_ball_q;
-	std::map<PolarBall*, std::set<PolarBall*> > neigh_graph;
+	std::map<PolarBall2*, std::set<PolarBall2*> > neigh_graph;
 	neigh_graph.clear();
 
 	bool error_during_init = false;
@@ -855,18 +860,18 @@ void PowerDiagram::label_poles()
 	*	0. step:
 	get Pole pair by surface point	*
 	**************************************/
-	std::map<Point, std::vector<PolarBall*>> neigh_by_surf;
+	std::map<Point, std::vector<PolarBall2*>> neigh_by_surf;
 	neigh_by_surf.clear();
 
 	int ct = 0;
 	for (auto& it : cells)
 	{
-		PolarBall* actual_polarball = it->get_polarball_ptr();
+		PolarBall2* actual_polarball = it->get_polarball_ptr();
 		std::vector<Point> related_surf_points = actual_polarball->get_surf_points();
 		for (auto surf_point : related_surf_points)
 		{
-			std::pair<std::map<Point, std::vector<PolarBall*>>::iterator, bool> res;
-			res = neigh_by_surf.insert(std::pair<Point, std::vector<PolarBall*>>(surf_point, std::vector<PolarBall*>()));
+			std::pair<std::map<Point, std::vector<PolarBall2*>>::iterator, bool> res;
+			res = neigh_by_surf.insert(std::pair<Point, std::vector<PolarBall2*>>(surf_point, std::vector<PolarBall2*>()));
 			res.first->second.push_back(actual_polarball);
 		}
 		ct += related_surf_points.size();
@@ -880,7 +885,7 @@ void PowerDiagram::label_poles()
 
 	for (auto& it : cells)
 	{
-		PolarBall* actual_polarball = it->get_polarball_ptr();
+		PolarBall2* actual_polarball = it->get_polarball_ptr();
 		std::vector<Point> related_surf_points = actual_polarball->get_surf_points();
 		std::set<Point> tmp_rel_surf(related_surf_points.begin(), related_surf_points.end());
 
@@ -908,8 +913,8 @@ void PowerDiagram::label_poles()
 
 	for (auto& cell : cells)
 	{
-		PolarBall* cell_ptr = cell->get_polarball_ptr();
-		std::set<PolarBall*> actual_neighs_ptr;
+		PolarBall2* cell_ptr = cell->get_polarball_ptr();
+		std::set<PolarBall2*> actual_neighs_ptr;
 
 		//adding neighbours by common face
 		auto actual_neighs = cell->get_neighbours();
@@ -935,7 +940,7 @@ void PowerDiagram::label_poles()
 				actual_neighs_ptr.insert(pole_pairs[1]);
 		}
 
-		neigh_graph.insert(std::pair<PolarBall*, std::set<PolarBall*>>(cell_ptr, actual_neighs_ptr));
+		neigh_graph.insert(std::pair<PolarBall2*, std::set<PolarBall2*>>(cell_ptr, actual_neighs_ptr));
 	}
 
 	printf("\t\tNeighbour graph created\n");
@@ -963,7 +968,7 @@ void PowerDiagram::label_poles()
 	int out_p = 0;
 	while (!tmp_q.empty())
 	{
-		PolarBall* tmp = tmp_q.pop();
+		PolarBall2* tmp = tmp_q.pop();
 
 		Point pole_point = tmp->get_point();
 		if (!bounded.is_inside(pole_point.x(), pole_point.y(), pole_point.z()))
@@ -1004,7 +1009,7 @@ void PowerDiagram::label_poles()
 
 		prev_p = pri_ball_q.top_prior();
 
-		PolarBall* p = pri_ball_q.pop();
+		PolarBall2* p = pri_ball_q.pop();
 		p->set_heap_index(-1);
 
 		if (prev_p < pri_ball_q.highest_prior())
@@ -1045,7 +1050,7 @@ void PowerDiagram::label_poles()
 		for (std::vector<Point>::iterator related_surf_p = tmp_surf_points.begin();
 			related_surf_p != tmp_surf_points.end();		++related_surf_p)
 		{
-			std::vector<PolarBall*> tmp_related_polarballs = neigh_by_surf[*related_surf_p];
+			std::vector<PolarBall2*> tmp_related_polarballs = neigh_by_surf[*related_surf_p];
 
 			if (tmp_related_polarballs.size() != 2)
 			{
@@ -1053,7 +1058,7 @@ void PowerDiagram::label_poles()
 				if (tmp_related_polarballs[0] != p) printf("\tERR: STRANGE - pole count thing to surface point\n");
 				continue;
 			}
-			PolarBall* opposite_pole = tmp_related_polarballs[0] != p ? tmp_related_polarballs[0] : tmp_related_polarballs[1];
+			PolarBall2* opposite_pole = tmp_related_polarballs[0] != p ? tmp_related_polarballs[0] : tmp_related_polarballs[1];
 			// We got the opposite pole based on the current surface_point
 
 			if (opposite_pole->get_heap_index() == -1) continue;
@@ -1075,9 +1080,12 @@ void PowerDiagram::label_poles()
 			pri_ball_q.update(opposite_pole->get_heap_index());
 		}
 	
-		std::set<PolarBall*> related_neighbours = neigh_graph[p];
+		/*************************************
+		*	Calculate new weights with Alpha weight	: */
+
+		std::set<PolarBall2*> related_neighbours = neigh_graph[p];
 		//qDebug() << "Neighbours ";
-		for (std::set<PolarBall*>::iterator it = related_neighbours.begin(); it != related_neighbours.end(); ++it)
+		for (std::set<PolarBall2*>::iterator it = related_neighbours.begin(); it != related_neighbours.end(); ++it)
 		{
 			if ((*it)->get_heap_index() == -1) continue;
 
@@ -1100,7 +1108,7 @@ void PowerDiagram::label_poles()
 	neigh_graph.clear();
 
 	//qDebug() << "Labeling finished";
-	printf("Labeling ended in: \n" , boost::chrono::duration_cast<milliseconds>(hrclock::now() - start).count());
+	printf("Labeling ended in: %zu\n" , boost::chrono::duration_cast<milliseconds>(hrclock::now() - start).count());
 }
 
 /* ****************************
@@ -1205,7 +1213,7 @@ void PowerDiagram::correct_unoriented_power_crust_faces(std::vector<face_t*>& un
 Others
 **************************** */
 
-void PowerDiagram::add_box_points(const Box& box, std::set<Point>& box_points, std::vector<std::pair<weighted_point, point_inf>>& points)
+void PowerDiagram::add_box_points(const Box& box, std::set<Point>& box_points, std::vector<std::pair<weighted_point, point_inf2>>& points)
 {
 	Point p1 = Point(box.get_xmin(), box.get_ymin(), box.get_zmin());
 	Point p2 = Point(box.get_xmin(), box.get_ymin(), box.get_zmax());
@@ -1228,7 +1236,7 @@ void PowerDiagram::add_box_points(const Box& box, std::set<Point>& box_points, s
 	box_points.insert(p8); points.push_back(std::pair<weighted_point, std::vector<Point>>(weighted_point(p8, 0.000001f), std::vector<Point>()));
 }
 
-Box PowerDiagram::update_box(const std::vector<std::pair<Pole, Point> >& weighted_points)
+Box PowerDiagram::update_box(const std::vector<std::pair<Pole2, Point> >& weighted_points)
 {
 	Box res = Box(-1.0f, 1.0f);
 
@@ -1272,7 +1280,7 @@ Box PowerDiagram::update_box(const std::vector<std::pair<Pole, Point> >& weighte
 	return res;
 }
 
-Box PowerDiagram::update_box(const std::vector<std::pair<weighted_point, point_inf>>& weighted_points)
+Box PowerDiagram::update_box(const std::vector<std::pair<weighted_point, point_inf2>>& weighted_points)
 {
 	Box res = Box(-1.0f, 1.0f);
 

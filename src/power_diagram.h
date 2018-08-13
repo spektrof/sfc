@@ -1,41 +1,41 @@
-/*
-	3D Power diagram implementation, using regular triangulation
-
-	Used CGAL functions for triangulation calculation
-*/
-
 #pragma once
-#include "types.h"
-#include "cgal_types.h"
+#include "base_types.h"
 #include "diagram_types.h"
+#include "power_crust_types.h"
+#include "reconstructor_utils.h"
 #include "priority_queue.h"
 #include <boost/thread/mutex.hpp>
 
-#include "export.h"
+#include "io_types.h"
+#include "cgal_inc.h"
 
-#include <CGAL/Regular_triangulation_3.h>
-#include <CGAL/Triangulation_vertex_base_with_info_3.h>
-#include <CGAL/Triangulation_cell_base_with_info_3.h>
+//typedef Kernel::Weighted_point_3                            weighted_point;
 
-typedef Kernel::Weighted_point_3                            weighted_point;
-
-typedef CGAL::Regular_triangulation_vertex_base_3<Kernel>        regular_triangulation_vertex_base;
-typedef CGAL::Triangulation_vertex_base_with_info_3<point_inf, Kernel, regular_triangulation_vertex_base> regular_triangulation_vertex_base_with_info;
-typedef CGAL::Regular_triangulation_cell_base_3<Kernel>          regular_triangulation_cell_base;
-typedef CGAL::Triangulation_cell_base_with_info_3<cell_inf_power, Kernel, regular_triangulation_cell_base>  regular_triangulation_cell_base_with_info;
+typedef CGAL::Regular_triangulation_vertex_base_3<Kernel>        regular_triangulation_vertex_base2;
+typedef CGAL::Triangulation_vertex_base_with_info_3<point_inf2, Kernel, regular_triangulation_vertex_base2> regular_triangulation_vertex_base_with_info2;
+typedef CGAL::Regular_triangulation_cell_base_3<Kernel>          regular_triangulation_cell_base2;
+typedef CGAL::Triangulation_cell_base_with_info_3<cell_inf_power2, Kernel, regular_triangulation_cell_base2>  regular_triangulation_cell_base_with_info2;
 
 typedef CGAL::Triangulation_data_structure_3<
-	regular_triangulation_vertex_base_with_info,
-	regular_triangulation_cell_base_with_info,
+	regular_triangulation_vertex_base_with_info2,
+	regular_triangulation_cell_base_with_info2,
 	Concurrency_tag
-> regular_triangulation_data_structure;
+> regular_triangulation_data_structure2;
 
-typedef CGAL::Regular_triangulation_3<Kernel, regular_triangulation_data_structure> regular_triangulation;
+typedef CGAL::Regular_triangulation_3<Kernel, regular_triangulation_data_structure2> regular_triangulation2;
 
-typedef regular_triangulation::Cell_handle regular_cell_handle;
-typedef regular_triangulation::Finite_vertices_iterator  regular_finite_vertices_iterator;
+typedef regular_triangulation2::Cell_handle regular_cell_handle2;
+typedef regular_triangulation2::Finite_vertices_iterator  regular_finite_vertices_iterator2;
 
-class PolarBall
+struct Pole2
+{
+	Point* center;
+	float radius;
+	bool is_null() const { return center == NULL; }
+	Pole2(Point* c = NULL, const float& r = 0.0f) : center(c), radius(r) {}
+};
+
+class PolarBall2
 {
 	enum flag
 	{
@@ -45,13 +45,13 @@ class PolarBall
 	};
 
 public:
-	PolarBall() {}
-	PolarBall(Pole _pole, const std::vector<Point>& sur_p) : pole(_pole), surf_points(sur_p), label(UNKNOWN), in(0.0f), out(0.0f) {}
-	~PolarBall() {}
+	PolarBall2() {}
+	PolarBall2(Pole2& _pole, const std::vector<Point>& sur_p) : pole(_pole), surf_points(sur_p), label(UNKNOWN), in(0.0f), out(0.0f) {}
+	~PolarBall2() {}
 
 	void set_pole(Point* _p, const float& r) { pole.center = _p; pole.radius = r; }
 
-	Pole get_pole() const { return pole; }
+	Pole2 get_pole() const { return pole; }
 	Point get_point() const { return *pole.center; }
 	float get_radius() const { return pole.radius; }
 	std::vector<Point> get_surf_points() const { return surf_points; }
@@ -86,14 +86,14 @@ public:
 			set_out_value(new_val);
 	}
 
-	float get_alpha_weight(PolarBall* rhs);					//intersect angle of shallowly intersect ball
-	float get_beta_weight(PolarBall* rhs, Point& surfpoint);	//angle related to a common surfpoint
+	float get_alpha_weight(PolarBall2* rhs);					//intersect angle of shallowly intersect ball
+	float get_beta_weight(PolarBall2* rhs, Point& surfpoint);	//angle related to a common surfpoint
 
 	int get_heap_index() const { return heap_index; }
 	void set_heap_index(const int& h_index) { heap_index = h_index; }
 
 private:
-	Pole pole;
+	Pole2 pole;
 	std::vector<Point> surf_points;
 	flag label;
 
@@ -105,17 +105,17 @@ class PowerCell
 {
 
 public:
-	PowerCell(Point* pol_p, const float& r, const std::vector<Point>& sur_p, const unsigned int& c_i) : polar_ball(PolarBall(Pole(pol_p, r), sur_p)), my_index(c_i) {
+	PowerCell(Point* pol_p, const float& r, const std::vector<Point>& sur_p, const unsigned int& c_i) : polar_ball(PolarBall2(Pole2(pol_p, r), sur_p)), my_index(c_i) {
 		cell_faces.clear();
 	}
 	~PowerCell() {
 		cell_faces.clear();
 	}
 
-	Pole get_pole_point() const { return polar_ball.get_pole(); }
+	Pole2 get_pole_point() const { return polar_ball.get_pole(); }
 
 	bool has_inner_pole() const { return polar_ball.is_inner_pole(); }
-	PolarBall* get_polarball_ptr() { return &polar_ball; }
+	PolarBall2* get_polarball_ptr() { return &polar_ball; }
 	std::vector<Point> get_related_surf_points() const { return polar_ball.get_surf_points(); }
 
 	void add_face(face_t * face)
@@ -175,7 +175,7 @@ public:
 	}
 
 private:
-	PolarBall polar_ball;
+	PolarBall2 polar_ball;
 
 	std::vector<face_t*> cell_faces;
 	unsigned int my_index;		//TODO: this is redundant
@@ -183,7 +183,7 @@ private:
 
 class PowerDiagram
 {
-	typedef priority_queue<PolarBall> priority_ball_queue;
+	typedef priority_queue<PolarBall2> priority_ball_queue;
 
 public:
 	PowerDiagram() : bounded(Box(-1.0f, 1.0f))
@@ -237,7 +237,7 @@ public:
 
 	//------------------------------------------
 	//surf pontok a polejaikkal
-	void calc_diagram(const std::vector<std::pair<Pole, Point> >& weighted_points);
+	void calc_diagram(const std::vector<std::pair<Pole2, Point> >& weighted_points);
 	void calc_diagram(std::vector<std::pair<weighted_point, point_inf>>& w_p);
 	void label_poles();
 	void calc_power_crust();
@@ -247,16 +247,16 @@ protected:
 	typedef std::pair<edge_tt*, std::set<unsigned int>> edge_identifier;
 	typedef std::pair<int, int> neighbour;
 
-	void add_box_points(const Box& box, std::set<Point>& box_points, std::vector<std::pair<weighted_point, point_inf>>& points);
+	void add_box_points(const Box& box, std::set<Point>& box_points, std::vector<std::pair<weighted_point, point_inf2>>& points);
 
-	Box update_box(const std::vector<std::pair<weighted_point, point_inf>>& weighted_points);
-	Box update_box(const std::vector<std::pair<Pole, Point> >& weighted_points);
+	Box update_box(const std::vector<std::pair<weighted_point, point_inf2>>& weighted_points);
+	Box update_box(const std::vector<std::pair<Pole2, Point> >& weighted_points);
 
-	void set_cell_info(regular_triangulation& T, regular_cell_handle cell, cell_inf_power* info);
-	void set_cell_info_threadsafe(regular_triangulation& T, regular_cell_handle cell, cell_inf_power* info);
+	void set_cell_info(regular_triangulation2& T, regular_cell_handle2 cell, cell_inf_power2* info);
+	void set_cell_info_threadsafe(regular_triangulation2& T, regular_cell_handle2 cell, cell_inf_power2* info);
 
-	void make_power_cells(regular_triangulation&, const std::set<Point>&, regular_finite_vertices_iterator, regular_finite_vertices_iterator, std::vector<regular_finite_vertices_iterator>* , std::vector<point_inf*>*, std::map<edge_tt, edge_identifier>*);
-	void make_power_cells_threadsafe(regular_triangulation&, const std::set<Point>&, std::vector<regular_finite_vertices_iterator> fvi_v, std::vector<regular_finite_vertices_iterator>*, std::vector<point_inf*>*, std::map<edge_tt, edge_identifier>*, unsigned int* act_cell_id);
+	void make_power_cells(regular_triangulation2&, const std::set<Point>&, regular_finite_vertices_iterator2, regular_finite_vertices_iterator2, std::vector<regular_finite_vertices_iterator2>* , std::vector<point_inf2*>*, std::map<edge_tt, edge_identifier>*);
+	void make_power_cells_threadsafe(regular_triangulation2&, const std::set<Point>&, std::vector<regular_finite_vertices_iterator2> fvi_v, std::vector<regular_finite_vertices_iterator2>*, std::vector<point_inf2*>*, std::map<edge_tt, edge_identifier>*, unsigned int* act_cell_id);
 
 	void correct_unoriented_power_crust_faces(std::vector<face_t*>& unoriented_face_ptrs);
 

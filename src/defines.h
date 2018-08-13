@@ -1,0 +1,27 @@
+/*
+	Some defines - not all neceserry
+*/
+
+#pragma once
+
+#define MAXIMUMTHREAD 100
+#define MAXIMUMTASK 10000 	//    BOOST_STATIC_ASSERT(size < 65536);
+#define STOPLEVEL 1
+#define PRINT 0
+#define CLOUDRECURSIVEPOINTCAP 10000
+#define ENABLE_CGAL_FILTER_CALCULATION
+#define ENABLE_CGAL_SURFACE_CALCULATION
+#define ADD_DEBUG
+#define CGAL_LINKED_WITH_TBB
+
+#ifdef ADD_DEBUG
+	#define ENABLE_DEBUG
+#endif
+
+#ifdef ENABLE_CGAL_FILTER_CALCULATION
+	#define ENABLE_CGAL_FILTER
+#endif
+
+#ifdef ENABLE_CGAL_SURFACE_CALCULATION
+	#define ENABLE_CGAL_SURFACE
+#endif

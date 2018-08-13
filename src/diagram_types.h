@@ -1,6 +1,6 @@
 #pragma once
 
-#include "cgal_types.h"
+#include "base_types.h"
 #include <map>
 #include <set>
 #include <vector>
@@ -12,7 +12,7 @@ struct edge_tt;
 typedef std::pair<unsigned int, Point*> edge_point;
 typedef std::pair<edge_point, edge_point> edge_t;
 
-struct cell_inf_power
+struct cell_inf_power2
 {
 	int index;
 	Point* dual;
@@ -20,19 +20,19 @@ struct cell_inf_power
 
 	boost::mutex* mux;
 
-	cell_inf_power() : index(-1), dual(NULL) { mux = new boost::mutex();  edge.clear(); }
-	~cell_inf_power() {}
+	cell_inf_power2() : index(-1), dual(NULL) { mux = new boost::mutex();  edge.clear(); }
+	~cell_inf_power2() {}
 };
 
-struct point_inf
+struct point_inf2
 {
 	std::vector<Point> surface_points;
 	std::map<int, std::set<edge_tt*>> neighbour_cell_edges;
 
 	boost::mutex* mux;
 
-	point_inf(const std::vector<Point>& sp = std::vector<Point>()) : surface_points(sp) { mux = new boost::mutex(); neighbour_cell_edges.clear(); }
-	~point_inf() { }
+	point_inf2(const std::vector<Point>& sp = std::vector<Point>()) : surface_points(sp) { mux = new boost::mutex(); neighbour_cell_edges.clear(); }
+	~point_inf2() { }
 };
 
 // ************************
@@ -59,7 +59,7 @@ struct edge_tt
 	// Constructors and sorter functor
 	edge_tt() { related_faces.clear(); }
 
-	edge_tt(edge_t e) : edge(e) {	related_faces.clear();	}
+	edge_tt(edge_t& e) : edge(e) {	related_faces.clear();	}
 
 	~edge_tt() {  related_faces.clear();  }
 
@@ -97,7 +97,7 @@ struct edge_pp
 	typedef std::shared_ptr<edge_pp> ee_ptr;
 
 	edge_tt edge;
-	edge_pp(const edge_tt e) : edge(e) {}
+	edge_pp(const edge_tt& e) : edge(e) {}
 };
 
 struct face_t
@@ -205,11 +205,4 @@ struct face_tt
 	face_tt(const std::set<edge_tt*>& in_edges, const std::vector<unsigned int>& rel_c) : face(in_edges, rel_c) {}
 };
 
-struct Pole
-{
-	Point* center;
-	float radius;
-	Pole(Point* c = NULL, const float& r = 0.0f) : center(c), radius(r) {}
 
-	bool is_null() const { return center == NULL; }
-};

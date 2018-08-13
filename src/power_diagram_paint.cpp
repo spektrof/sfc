@@ -105,16 +105,16 @@ export_data PowerDiagram::get_triangled_mesh_without_texture()
 
 		for (auto& edge : face_edges)
 		{
-			res.face_v.push_back(first_triangle_index);
+			res.face_v.push_back(std::pair<uint32_t, uint32_t>(first_triangle_index, 0));
 
 			edge_orientation = edge->related_faces[act_face];
 			edge_point = edge_orientation == 0 ? edge->edge.first.second : edge->edge.second.second;
 			auto pos = point_map[edge_point];
-			res.face_v.push_back(pos);
+			res.face_v.push_back(std::pair<uint32_t, uint32_t>(pos, 0));
 
 			edge_point = edge_orientation == 0 ? edge->edge.second.second : edge->edge.first.second;
 			pos = point_map[edge_point];
-			res.face_v.push_back(pos);
+			res.face_v.push_back(std::pair<uint32_t, uint32_t>(pos, 0));
 		}
 	}
 	return res;

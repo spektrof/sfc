@@ -124,21 +124,21 @@ protected:
 		*p2_ptr = tmp;
 	}
 
-	static unsigned int get_parent(const int& p)
+	unsigned int get_parent(const int& p)
 	{
 		if (p == 0) return 0;
 
 		return (p - 1) >> 1;
 	}
 
-	static unsigned int get_left_child(const int& p)
+	unsigned int get_left_child(const int& p)
 	{
 		int _p = (p + 1) << 1;
 		_p--;
 		return _p;
 	}
 
-	static unsigned int get_right_child(const int& p)
+	unsigned int get_right_child(const int& p)
 	{
 		int _p = (p + 1) << 1;
 		return _p;

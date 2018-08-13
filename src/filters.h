@@ -1,5 +1,5 @@
 #pragma once
-#include "cgal_types.h"	
+#include "base_types.h"	
 #include <vector>
 
 #include <CGAL/remove_outliers.h>
@@ -108,7 +108,8 @@ public:
 	void filter_process(std::vector<T>& points) override
 	{
 		//FIRST: I dont know the ratio
-		typename std::vector<T>::iterator first_to_remove = CGAL::remove_outliers(points.begin(), points.end(),
+		std::vector<T>::iterator first_to_remove
+			= CGAL::remove_outliers(points.begin(), points.end(),
 				PointMap(),
 				nb_neighbors,
 				100.,                  // No limit on the number of outliers to remove
